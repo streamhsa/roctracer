@@ -43,17 +43,26 @@ include ( env )
 
 ## Setup the package version.
 get_version ( "1.0.0" )
-message ( "-- LIB-VERSION: ${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_PATCH}" )
 
 set ( BUILD_VERSION_MAJOR ${VERSION_MAJOR} )
 set ( BUILD_VERSION_MINOR ${VERSION_MINOR} )
 set ( BUILD_VERSION_PATCH ${VERSION_PATCH} )
-set ( LIB_VERSION_STRING "${BUILD_VERSION_MAJOR}.${BUILD_VERSION_MINOR}.${BUILD_VERSION_PATCH}" )
 if ( DEFINED VERSION_BUILD AND NOT ${VERSION_BUILD} STREQUAL "" )
   message ( "VERSION BUILD DEFINED ${VERSION_BUILD}" )
   set ( BUILD_VERSION_PATCH "${BUILD_VERSION_PATCH}-${VERSION_BUILD}" )
 endif ()
 set ( BUILD_VERSION_STRING "${BUILD_VERSION_MAJOR}.${BUILD_VERSION_MINOR}.${BUILD_VERSION_PATCH}" )
+
+## Library versioning should be independent of BUILD_ versioning
+set ( LIB_VERSION_MAJOR 1)
+set ( LIB_VERSION_MINOR 0)
+if (DEFINED ENV{ROCM_LIBPATCH_VERSION})
+     set (LIB_VERSION_PATCH $ENV{ROCM_LIBPATCH_VERSION})
+else ()
+    set ( LIB_VERSION_PATCH 0)
+endif ()
+set ( LIB_VERSION_STRING "${LIB_VERSION_MAJOR}.${LIB_VERSION_MINOR}.${LIB_VERSION_PATCH}" )
+message ( "-- LIB-VERSION: ${LIB_VERSION_MAJOR}.${LIB_VERSION_MINOR}.${LIB_VERSION_PATCH}" )
 
 ## Set target and root/lib/test directory
 set ( TARGET_NAME "${ROCTRACER_TARGET}" )
@@ -66,7 +75,7 @@ include ( ${LIB_DIR}/CMakeLists.txt )
 
 ## Set the VERSION and SOVERSION values
 set_property ( TARGET ${TARGET_NAME} PROPERTY VERSION "${LIB_VERSION_STRING}" )
-set_property ( TARGET ${TARGET_NAME} PROPERTY SOVERSION "${BUILD_VERSION_MAJOR}" )
+set_property ( TARGET ${TARGET_NAME} PROPERTY SOVERSION "${LIB_VERSION_MAJOR}" )
 
 # If the library is a release, strip the target library
 if ( "${CMAKE_BUILD_TYPE}" STREQUAL release )
@@ -84,6 +93,8 @@ add_custom_target ( inc-link ALL WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
                     COMMAND ${CMAKE_COMMAND} -E create_symlink ../${ROCTRACER_NAME}/include inc-link )
 add_custom_target ( so-link ALL WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
                     COMMAND ${CMAKE_COMMAND} -E create_symlink ../${ROCTRACER_NAME}/lib/${ROCTRACER_LIBRARY}.so so-link )
+add_custom_target ( so-link-major ALL WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
+                    COMMAND ${CMAKE_COMMAND} -E create_symlink ../${ROCTRACER_NAME}/lib/${ROCTRACER_LIBRARY}.so.${LIB_VERSION_MAJOR} so-link-major )
 
 ## Install information
 install ( TARGETS ${ROCTRACER_TARGET} LIBRARY DESTINATION lib )
@@ -94,6 +105,7 @@ install ( FILES ${CMAKE_CURRENT_SOURCE_DIR}/inc/ext/prof_protocol.h DESTINATION 
 install ( FILES ${CMAKE_CURRENT_SOURCE_DIR}/inc/ext/hsa_rt_utils.hpp DESTINATION include/ext )
 install ( FILES ${PROJECT_BINARY_DIR}/inc-link DESTINATION ../include RENAME ${ROCTRACER_NAME} )
 install ( FILES ${PROJECT_BINARY_DIR}/so-link DESTINATION ../lib RENAME ${ROCTRACER_LIBRARY}.so )
+install ( FILES ${PROJECT_BINARY_DIR}/so-link-major DESTINATION ../lib RENAME ${ROCTRACER_LIBRARY}.so.${LIB_VERSION_MAJOR} )
 install ( FILES ${PROJECT_BINARY_DIR}/test/libtracer_tool.so DESTINATION tool )
 
 ## Packaging directives

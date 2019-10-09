@@ -1,7 +1,7 @@
 #!/bin/bash -x
 SRC_DIR=`dirname $0`
 COMPONENT="roctracer"
-ROCM_PATH="/opt/rocm"
+ROCM_PATH="/opt/rocm-2.7.3"
 
 fatal() {
   echo "$1"
