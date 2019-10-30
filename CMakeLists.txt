@@ -89,11 +89,23 @@ add_subdirectory ( ${TEST_DIR} ${PROJECT_BINARY_DIR}/test )
 ## Install and packaging
 set ( CMAKE_INSTALL_PREFIX ${CMAKE_INSTALL_PREFIX}/${ROCTRACER_NAME} )
 message ( "---------Install-Dir: ${CMAKE_INSTALL_PREFIX}" )
+set ( RUNTIME_LIBRARY_SO       "${CMAKE_CURRENT_SOURCE_DIR}/lib/${ROCTRACER_LIBRARY}.so" )
+set ( RUNTIME_LIBRARY_SO_MAJOR "${CMAKE_CURRENT_SOURCE_DIR}/lib/${ROCTRACER_LIBRARY}.so.${LIB_VERSION_MAJOR}" )
+set ( RUNTIME_LIBRARY_SO_PATCH "${CMAKE_CURRENT_SOURCE_DIR}/lib/${ROCTRACER_LIBRARY}.so.${LIB_VERSION_STRING}" )
 
 add_custom_target ( inc-link ALL WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
                     COMMAND ${CMAKE_COMMAND} -E create_symlink ../${ROCTRACER_NAME}/include inc-link )
-add_custom_target ( so-link ALL WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
-                    COMMAND ${CMAKE_COMMAND} -E create_symlink ../${ROCTRACER_NAME}/lib/${ROCTRACER_LIBRARY}.so so-link )
+#add_custom_target ( so-link ALL WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
+#                    COMMAND ${CMAKE_COMMAND} -E create_symlink ../${ROCTRACER_NAME}/lib/${ROCTRACER_LIBRARY}.so so-link )
+
+add_custom_command( OUTPUT ${RUNTIME_LIBRARY_SO} WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/lib
+                    COMMAND ${CMAKE_COMMAND} -E create_symlink ../${ROCTRACER_NAME}/lib/${ROCTRACER_LIBRARY}.so ${ROCTRACER_LIBRARY}.so )
+add_custom_command( OUTPUT ${RUNTIME_LIBRARY_SO_MAJOR} WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/lib
+                    COMMAND ${CMAKE_COMMAND} -E create_symlink ../${ROCTRACER_NAME}/lib/${ROCTRACER_LIBRARY}.so.${LIB_VERSION_MAJOR} ${ROCTRACER_LIBRARY}.so.${LIB_VERSION_MAJOR} )
+add_custom_command( OUTPUT ${RUNTIME_LIBRARY_SO_PATCH} WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/lib
+                    COMMAND ${CMAKE_COMMAND} -E create_symlink ../${ROCTRACER_NAME}/lib/${ROCTRACER_LIBRARY}.so.${LIB_VERSION_STRING} ${ROCTRACER_LIBRARY}.so.${LIB_VERSION_STRING} )
+
+add_custom_target( copy_targets ALL DEPENDS ${RUNTIME_LIBRARY_SO}  ${RUNTIME_LIBRARY_SO_MAJOR}  ${RUNTIME_LIBRARY_SO_PATCH} )
 
 ## Install information
 install ( TARGETS ${ROCTRACER_TARGET} LIBRARY DESTINATION lib )
@@ -103,7 +115,10 @@ install ( FILES ${CMAKE_CURRENT_SOURCE_DIR}/inc/roctracer_hcc.h DESTINATION incl
 install ( FILES ${CMAKE_CURRENT_SOURCE_DIR}/inc/ext/prof_protocol.h DESTINATION include/ext )
 install ( FILES ${CMAKE_CURRENT_SOURCE_DIR}/inc/ext/hsa_rt_utils.hpp DESTINATION include/ext )
 install ( FILES ${PROJECT_BINARY_DIR}/inc-link DESTINATION ../include RENAME ${ROCTRACER_NAME} )
-install ( FILES ${PROJECT_BINARY_DIR}/so-link DESTINATION ../lib RENAME ${ROCTRACER_LIBRARY}.so )
+#install ( FILES ${PROJECT_BINARY_DIR}/so-link DESTINATION ../lib RENAME ${ROCTRACER_LIBRARY}.so )
+install ( FILES ${PROJECT_BINARY_DIR}/lib/${ROCTRACER_LIBRARY}.so DESTINATION ../lib )
+install ( FILES ${PROJECT_BINARY_DIR}/lib/${ROCTRACER_LIBRARY}.so.${LIB_VERSION_MAJOR} DESTINATION ../lib )
+install ( FILES ${PROJECT_BINARY_DIR}/lib/${ROCTRACER_LIBRARY}.so.${LIB_VERSION_STRING} DESTINATION ../lib )
 install ( FILES ${PROJECT_BINARY_DIR}/test/libtracer_tool.so DESTINATION tool )
 
 ## Packaging directives
